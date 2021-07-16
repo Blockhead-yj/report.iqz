@@ -59,26 +59,26 @@ load(file = "./data/academic.rda")
 #### Data *scores*
 
 ```{r viewing-scores}
-head(scores, 10)
+head(as_tibble(scores), 5)
 ```
 
-There are `r length(scores)` columns in *scores*, `r str_c(colnames(scores), collapse = ",")`. The most important columns are **user_id**, **game_name**, **game_score_raw** and **game_score_std**. Sometimes we also need **game_time** to get the first score in a game of a person if he/she has more than one score in the game.
+There are `r length(scores)` columns in *scores*, `r str_c(colnames(scores), collapse = ", ")`. The most important columns are **user_id**, **game_name**, **game_score_raw** and **game_score_std**. Sometimes we also need **game_time** to get the first score in a game of a person if he/she has more than one score in the game.
 
 #### Data *users*
 
 ```{r viewing-users}
-head(users, 10)
+head(users, 5)
 ```
 
-There are `r length(users)` columns in *scores*, `r str_c(colnames(users), collapse = ",")`. The most important columns are **user_id**, **user_name**. Sometimes we also need **user_dob**, **grade** or **school** for further analysis.
+There are `r length(users)` columns in *scores*, `r str_c(colnames(users), collapse = ", ")`. The most important columns are **user_id**, **user_name**. Sometimes we also need **user_dob**, **grade** or **school** for further analysis.
 
 #### Data *academic*
 
 ```{r viewing-academic}
-head(academic, 10)
+head(academic, 5)
 ```
 
-Actually academic data can vary between different school, grade and class. This example is one of them. You should just keep in mind that the most important information in academic data is **name**, **subject name** and **subject score**. You can wrangle it to a long data.frame containing these three columns, **ID** sometimes can be useful if the name is duplicated.
+Actually academic data can vary between different school, grade and class. This example is one of them. You should just keep in mind that the most important information in academic data is **name**, **subject name** and **subject score**. You can wrangle it to a long data.frame containing these three columns, while **ID** sometimes can be useful if the name is duplicated.
 
 ```{r tidy-academic}
 tidy_acd <- academic %>% 
@@ -91,18 +91,18 @@ This step is the beginning of analysis, you should check if the **user** is dupl
 
 #### distribution(normality)
 
-Then you should check the distribution of **game_score_raw**, here is the first utility function, *plot_distribution*.
+Then you should check the distribution of **game_score_raw**, here is the first utility function, ***plot_distribution***.
 
-```{r plot-distribution}
+```{r plot-distribution, fig.width=5, fig.height=5}
 plot_distribution(data = scores, ob_value = "game_score_raw", group = ~game_name, bins = 50)
 ```
-This function accept a data.frame with format as data *scores*, if you didn't change the structure of *scores*, you can just put it into the function. For other situation, you should give the column name of observation value(arg **ob_value**) and a formula indicate the facet variable(s)(arg **group**).
+This function accept a data.frame with format as data *scores*, if you didn't change the structure of *scores*, you can just put it into the function. For other situation, you should give the column name of observation value(arg **ob_value** ) and a formula indicate the facet variable(s)(arg **group** ).
 
 #### Two variables distribution(scatters)
 
-After check the distribution of single variable, you should also check the distribution of **game_score_raw** and **acd_score**. What you need here is a function to make a scatter plot, *plot_scatter*. To plot the scatter, you should join *scores* and *academic* together first.
+After check the distribution of single variable, you should also check the distribution of **game_score_raw** and **acd_score**. What you need here is a function to make a scatter plot, ***plot_scatter***. To plot the scatter, you should join *scores* and *academic* together first.
 
-```{r plot-scatter, fig.width=8, fig.height=8}
+```{r plot-scatter, fig.width=5, fig.height=5}
 game_pfm_with_acd <- scores %>% 
   left_join(users, by = "user_id") %>% 
   inner_join(tidy_acd, by = c("user_name"="姓名")) 
@@ -118,9 +118,9 @@ The second step is selecting games for model. IQUIZOO test lots of games, we can
 
 #### Select games by finish rate
 
-To get more complete observations, we can drop some games with big missing rate. This can be done with function *rate_GameFinish*. It will return a tibble with **game_name** and its **finish_rate**. If you want to see the missing pattern, you can specify the argument plot as TRUE.
+To get more complete observations, we can drop some games with big missing rate. This can be done with function ***rate_GameFinish***. It will return a tibble with **game_name** and its **finish_rate**. If you want to see the missing pattern, you can specify the argument plot as TRUE.
 
-```{r finish-rate}
+```{r finish-rate, fig.width=5, fig.height=5}
 finish_rate <- rate_GameFinish(data = scores, plot = TRUE, idx_game = "game_name", idx_user = "user_id", ob_value = "game_score_raw")
 
 ```
@@ -128,7 +128,7 @@ From the plot above, we can set the finish rate threshold as 0.5, it means we on
 
 #### Select by step regression
 
-Now we select predictors(games) by step regression, to continue the subsequent analysis, we need a wide data.frame with each row represent all observations of a person. This wide data is convenient for modeling. This can be done using function *step_lm*.
+Now we select predictors(games) by step regression, to continue the subsequent analysis, we need a wide data.frame with each row represent all observations of a person. This wide data is convenient for modeling. This can be done using function ***step_lm***.
 
 ```{r step_mod}
 # prepare wide data
@@ -151,7 +151,7 @@ summary(models$step_mods[[2]])
 #### Select by relative weight
 
 If there are still more than 5 tasks in model, we think this is not good for report. So we can (optionally) further select predictors by relative weight.
-Relative weight analysis can determine the contribution of every predictors in model, so you can drop the games with little distribution to get a neat model. This can be done by function *select_by_RW*. 
+Relative weight analysis can determine the contribution of every predictors in model, so you can drop the games with little distribution to get a neat model. This can be done by function ***select_by_RW***. 
 
 ```{r relative-weight}
 models <- models %>% 
@@ -172,13 +172,13 @@ Before final report, you should always check the models to confirm the model mee
 
 ### Predict and potential judge 
 
-After determining the models, we can predict the academic score for students and make judgment for their academic potential. Since missing value is too common in our data, sometimes we should predict the academic score even there are missing predictors in his/her IQUIZOO data. To achieve this, we calculate the weighted sum of the game score and it's coefficient in model. Thus, a complete observation will get the same predict result as function *stats::predict*, but we can also get prediction for those missing some predictors. 
+After determining the models, we can predict the academic score for students and make judgment for their academic potential. Since missing value is too common in our data, sometimes we should predict the academic score even there are missing predictors in his/her IQUIZOO data. To achieve this, we calculate the weighted sum of the game score and it's coefficient in model. Thus, a complete observation will get the same predict result as function ***stats::predict*** , but we can also get prediction for those missing some predictors. 
 
-However, we are not going to make predictions for those students who miss too many predictors, and thus a missing proportion of predictors. This can be done by function *calc_missing_prop*. Missing proportion is not simply count the number of missing predictors, but take their relative weight in models into account. Once the missing proportion of predictors determined, a arbitrary threshold of 30% will be used to filter the students who are involved in prediction and judgment.
+However, we are not going to make predictions for those students who miss too many predictors, and thus a missing proportion of predictors. This can be done by function ***calc_missing_prop***. Missing proportion is not simply count the number of missing predictors, but take their relative weight in models into account. Once the missing proportion of predictors determined, a arbitrary threshold of 30% will be used to filter the students who are involved in prediction and judgment.
 
 #### Calculate the missing proportion of predictos
 
-We need relative weight of predictors to calculate the missing proportion of predictors, and this was done in the function *select_by_RW*. It will output a lm object with additional data.frame "rw" in the list. Function *calc_missing_prop* will add column on the left of data_wider.
+We need relative weight of predictors to calculate the missing proportion of predictors, and this was done in the function ***select_by_RW***. It will output a lm object with additional data.frame "rw" in the list. Function ***calc_missing_prop*** will add column on the left of data_wider.
 
 ```{r missing-prop}
 models <- models %>% 
@@ -192,7 +192,7 @@ models <- models %>%
 
 #### Predict and judge potential
 
-Prediction is accomplished by function *wt_sum_predict*, which accepts **data_wider** and **model**(the output of *select_by_RW*) and add two columns(**mod_predict** and **wt_sun_predict**) to **data_wider**. Potential judgment is accomplished by function *judge_Pot*, it accepts current academic score and predict score, output a factor vector whose levels are predefined **judgment_lvls**.
+Prediction is accomplished by function ***wt_sum_predict***, which accepts **data_wider** and **model**(the output of ***select_by_RW***) and add two columns(**mod_predict** and **wt_sun_predict**) to **data_wider**. Potential judgment is accomplished by function ***judge_Pot*** , it accepts current academic score and predict score, output a factor vector whose levels are predefined **judgment_lvls**.
 
 ```{r predict-and-judge}
 models <- models %>% 
@@ -209,7 +209,7 @@ models <- models %>%
 
 #### Prepare for report
 
-All the analysis has been done, it is time to make report. Here a function *prepare_report* can summary all the data and models above to a list of things that can be directly used in model report. Besides the data and models above, *prepare_report* needs two other things: **content_ability** for reporting the corresponding ability of games; **class_NL**, class name list for reporting the corresponding class of students. 
+All the analysis has been done, it is time to make report. Here a function ***prepare_report*** can summary all the data and models above to a list of things that can be directly used in model report. Besides the data and models above, ***prepare_report*** needs two other things: **content_ability** for reporting the corresponding ability of games; **class_NL**, class name list for reporting the corresponding class of students. 
 
 ```{r prepare-report}
 load("./data/content_ability.rda")

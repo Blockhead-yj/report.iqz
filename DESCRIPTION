@@ -1,0 +1,24 @@
+Package: report.iqz
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "First",
+           family = "Last",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: IQUIZOO is now a developing company shipped with a bunch of games assessing psychological constructs. These games are used to test and training the students in school, and then a feedback report will be send to the school. Because the model needs to be checked every time, and sometimes needs to be modified, the pipeline of making report can not be automated. However, with some utilities function and automating part of pipeline, this package is expected to save the time of making a report.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports: 
+    dplyr,
+    ggplot2,
+    magrittr
+Depends: 
+    R (>= 2.10)
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

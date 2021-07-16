@@ -1,0 +1,231 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# report.iqz
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of report.iqz is to establish a pipeline of making report for IQUIZOO data.
+
+## Background
+
+IQUIZOO is now a developing company shipped with a bunch of games assessing psychological constructs. These games are used to test and training the students in school, and then a feedback report will be send to the school. Because the model needs to be checked every time, and sometimes needs to be modified, the pipeline of making report can not be automated. However, with some utilities function and automating part of pipeline, this package is expected to save the time of making a report.
+
+## Installation
+
+You can install the released version of report.iqz from [Github](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Blockhead-yj/report.iqz")
+```
+
+## Example Pipeline
+
+This is a basic example illustrate the basic pipeline of making report for IQUIZOO data. Actually, this package only contains the prediction part of report now. The basic statistic part will be integrated in this package in the future.
+
+```{r setup, include=FALSE}
+# data set manipulation
+library(tidyverse)
+# report utilities
+library(report.iqz)
+```
+
+### Prepare Data
+
+IQUIZOO data can be downloaded using package [tarflow.iquizoo](http://github.com/psychelzh/tarflow.iquizoo/), the demo data is a example with user information hidden. Academic data is usually a excel file, and it can vary between different school, grade and class. But the most important information in academic excel file is student name, subject name and subject score, you just need wrangle the raw data to a long data.frame with these three column.
+
+```{r load-data, include=FALSE}
+load(file = "./data/scores.rda")
+load(file = "./data/users.rda")
+load(file = "./data/academic.rda")
+```
+
+### Viewing data
+
+#### Data *scores*
+
+```{r viewing-scores}
+head(scores, 10)
+```
+
+There are `r length(scores)` columns in *scores*, `r str_c(colnames(scores), collapse = ",")`. The most important columns are **user_id**, **game_name**, **game_score_raw** and **game_score_std**. Sometimes we also need **game_time** to get the first score in a game of a person if he/she has more than one score in the game.
+
+#### Data *users*
+
+```{r viewing-users}
+head(users, 10)
+```
+
+There are `r length(users)` columns in *scores*, `r str_c(colnames(users), collapse = ",")`. The most important columns are **user_id**, **user_name**. Sometimes we also need **user_dob**, **grade** or **school** for further analysis.
+
+#### Data *academic*
+
+```{r viewing-academic}
+head(academic, 10)
+```
+
+Actually academic data can vary between different school, grade and class. This example is one of them. You should just keep in mind that the most important information in academic data is **name**, **subject name** and **subject score**. You can wrangle it to a long data.frame containing these three columns, **ID** sometimes can be useful if the name is duplicated.
+
+```{r tidy-academic}
+tidy_acd <- academic %>% 
+  pivot_longer(cols = any_of(subjects), names_to = "subject_name", values_to = "acd_score")
+```
+
+### Manual review 
+
+This step is the beginning of analysis, you should check if the **user** is duplicate, if the **game_score_raw** of one person is duplicate, and if there are outliers. Data *users* and *academic* if often good, but the data *scores* is quiet dirty.
+
+#### distribution(normality)
+
+Then you should check the distribution of **game_score_raw**, here is the first utility function, *plot_distribution*.
+
+```{r plot-distribution}
+plot_distribution(data = scores, ob_value = "game_score_raw", group = ~game_name, bins = 50)
+```
+This function accept a data.frame with format as data *scores*, if you didn't change the structure of *scores*, you can just put it into the function. For other situation, you should give the column name of observation value(arg **ob_value**) and a formula indicate the facet variable(s)(arg **group**).
+
+#### Two variables distribution(scatters)
+
+After check the distribution of single variable, you should also check the distribution of **game_score_raw** and **acd_score**. What you need here is a function to make a scatter plot, *plot_scatter*. To plot the scatter, you should join *scores* and *academic* together first.
+
+```{r plot-scatter, fig.width=8, fig.height=8}
+game_pfm_with_acd <- scores %>% 
+  left_join(users, by = "user_id") %>% 
+  inner_join(tidy_acd, by = c("user_name"="姓名")) 
+
+game_pfm_with_acd %>% 
+  filter(subject_name == "数学") %>% 
+  plot_scatter(data = ., ob_value_x = "game_score_raw", ob_value_y = "acd_score", group = subject_name~game_name, cor = TRUE)
+
+```
+### Select games for model
+
+The second step is selecting games for model. IQUIZOO test lots of games, we can't put all games into model for the sake of avoiding overfitting. Another reason is that there are a lot of missing values distributed in different games. Some games have too many missing values, so that we have no choice but to drop these games to get more complete observations.
+
+#### Select games by finish rate
+
+To get more complete observations, we can drop some games with big missing rate. This can be done with function *rate_GameFinish*. It will return a tibble with **game_name** and its **finish_rate**. If you want to see the missing pattern, you can specify the argument plot as TRUE.
+
+```{r finish-rate}
+finish_rate <- rate_GameFinish(data = scores, plot = TRUE, idx_game = "game_name", idx_user = "user_id", ob_value = "game_score_raw")
+
+```
+From the plot above, we can set the finish rate threshold as 0.5, it means we only preserve the games with finish rate above 0.5.
+
+#### Select by step regression
+
+Now we select predictors(games) by step regression, to continue the subsequent analysis, we need a wide data.frame with each row represent all observations of a person. This wide data is convenient for modeling. This can be done using function *step_lm*.
+
+```{r step_mod}
+# prepare wide data
+data_wider <- game_pfm_with_acd %>% 
+  select(user_id, user_name, game_name, game_score_raw, subject_name, acd_score) %>% 
+  mutate(game_name = str_remove_all(game_name, "[（）-]")) %>% 
+  pivot_wider(names_from = "game_name", values_from = "game_score_raw", values_fn = median) %>% 
+  mutate(across(where(is.numeric), ~ scale(.x)[,1]*15 + 100))
+# make different model for different subject
+models <- data_wider %>% 
+  group_by(subject_name) %>% 
+  group_nest() %>% 
+  mutate(step_mods = map(
+    data,
+    ~ step_lm(data_wider = .x, formula = acd_score ~ . -user_id - user_name, trace = FALSE)
+  ))
+# example model
+summary(models$step_mods[[2]])
+```
+#### Select by relative weight
+
+If there are still more than 5 tasks in model, we think this is not good for report. So we can (optionally) further select predictors by relative weight.
+Relative weight analysis can determine the contribution of every predictors in model, so you can drop the games with little distribution to get a neat model. This can be done by function *select_by_RW*. 
+
+```{r relative-weight}
+models <- models %>% 
+  mutate(
+    RW_mods = map2(
+      data, step_mods,
+      ~ {select_by_RW(data_wider = .x, formula = .y, n_task = 5)}
+    )
+  )
+# example model
+summary(models$RW_mods[[2]])
+
+```
+
+#### Check the models
+
+Before final report, you should always check the models to confirm the model meet statistic requirement, this can be done with package [performance](https://github.com/easystats/performance).
+
+### Predict and potential judge 
+
+After determining the models, we can predict the academic score for students and make judgment for their academic potential. Since missing value is too common in our data, sometimes we should predict the academic score even there are missing predictors in his/her IQUIZOO data. To achieve this, we calculate the weighted sum of the game score and it's coefficient in model. Thus, a complete observation will get the same predict result as function *stats::predict*, but we can also get prediction for those missing some predictors. 
+
+However, we are not going to make predictions for those students who miss too many predictors, and thus a missing proportion of predictors. This can be done by function *calc_missing_prop*. Missing proportion is not simply count the number of missing predictors, but take their relative weight in models into account. Once the missing proportion of predictors determined, a arbitrary threshold of 30% will be used to filter the students who are involved in prediction and judgment.
+
+#### Calculate the missing proportion of predictos
+
+We need relative weight of predictors to calculate the missing proportion of predictors, and this was done in the function *select_by_RW*. It will output a lm object with additional data.frame "rw" in the list. Function *calc_missing_prop* will add column on the left of data_wider.
+
+```{r missing-prop}
+models <- models %>% 
+  mutate(
+    data = map2(
+      data, RW_mods,
+      ~ calc_missing_prop(data_wider = .x, RelativeWeight = .y$rw)
+      )
+    )
+```
+
+#### Predict and judge potential
+
+Prediction is accomplished by function *wt_sum_predict*, which accepts **data_wider** and **model**(the output of *select_by_RW*) and add two columns(**mod_predict** and **wt_sun_predict**) to **data_wider**. Potential judgment is accomplished by function *judge_Pot*, it accepts current academic score and predict score, output a factor vector whose levels are predefined **judgment_lvls**.
+
+```{r predict-and-judge}
+models <- models %>% 
+  mutate(
+    data = map2(
+      data, RW_mods,
+      ~ wt_sum_predict(data_wider = .x, model = .y) %>% 
+        mutate(judgment = judge_Pot(acd_score, wt_sum_predict))
+    )
+  )
+  
+```
+### Make report
+
+#### Prepare for report
+
+All the analysis has been done, it is time to make report. Here a function *prepare_report* can summary all the data and models above to a list of things that can be directly used in model report. Besides the data and models above, *prepare_report* needs two other things: **content_ability** for reporting the corresponding ability of games; **class_NL**, class name list for reporting the corresponding class of students. 
+
+```{r prepare-report}
+load("./data/content_ability.rda")
+content_ability <- content_ability %>% 
+  left_join(scores %>% select(game_name, game_id), by = "game_id")
+class_NL <- academic %>% 
+  select(user_name = 姓名, class = 班级)
+mod_reports <- models %>% 
+  transmute(
+    mod_reports = map2(
+      data, RW_mods,
+      ~ prepare_report(data_wider = .x, model = .y, abilities = content_ability, class_NL = class_NL, background = FALSE)
+    )
+  )
+```
+
+#### Render the predict report
+
+

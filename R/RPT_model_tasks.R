@@ -22,12 +22,12 @@ RPT_model_tasks <- function(model, abilities){
       rename(Variables = game_name) %>%
       filter(ab_type == "基础能力") %>%
       group_by(Variables) %>%
-      summarise(ability = str_c(ab_name_second, collapse = ","), .groups = "drop")
+      summarise(ability = str_c(unique(ab_name_second), collapse = ","), .groups = "drop")
   } else {
     report_ab <-  abilities %>%
       rename(Variables = game_name) %>%
       group_by(Variables) %>%
-      summarise(ability = str_c(ab_name_second, collapse = ","), .groups = "drop")
+      summarise(ability = str_c(unique(ab_name_second), collapse = ","), .groups = "drop")
   }
   report_ab %>%
     right_join(model$rw, by = "Variables") %>%

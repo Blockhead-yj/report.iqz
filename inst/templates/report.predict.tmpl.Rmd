@@ -1,0 +1,36 @@
+## {{Curr_subj}}
+
+### {{Curr_subj}}学业潜力预测模型
+
+针对{{Curr_subj}}学业成绩标准分，我们用逐步回归的方法找到了与之最相关的几个测评任务，建立了如下的预测模型：
+
+
+```{r present-model-tasks-{{Curr_subj}}}
+Curr_mod_RPT$report_rw %>% 
+  knitr::kable(caption = str_glue("模型{i}-{Curr_subj}潜力预测"))
+
+adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
+```
+
+该模型用`r Curr_mod_RPT$n_task`个测评任务成绩预测了{{Curr_subj}}学业成绩`r adj_R2`的变异，即不同学生在{{Curr_subj}}成绩上的差异有`r adj_R2`可以用这几个测评任务成绩代表的能力解释。
+
+### {{Curr_subj}}学业潜力预测和评定
+
+依据这个模型，我们对学生的{{Curr_subj}}成绩进行了预测。即根据一个学生的各项认知能力分数，预测该学生应该达到的{{Curr_subj}}成绩（学业学习力分数），并综合考虑该学生的学业学习力分数与现有的学业成绩对其进行潜力评定。
+
+
+```{r plot-predict-{{Curr_subj}}, fig.width=8, fig.height=6}
+plot_pred(Curr_mod_RPT)
+```
+
+上图展示了模型预测的效果，以及潜力评定的分布。假如模型可以100%的预测学生的学习成绩，则预测值（学业学习力分数）和实际值（学业成绩标准分）应该严格相等，图中的店会精确的落在图中的对角线（绿线）上。实际预测中，由于学业成绩不仅仅受到认知能力的影响，认知能力的测量误差以及单次学业成绩的偶然性因素等原因，预测能力不可能达到100%。故而图中的点会围绕对角线（绿线）附近分布，点在对角线附近的波动越小，说明预测误差越小。
+
+```{r summary-prediction-{{Curr_subj}}}
+Curr_mod_RPT$summary_pred %>%  
+  knitr::kable(caption = str_glue("潜能评定总表-{Curr_subj}"))
+```
+
+```{r predict-namelist-{{Curr_subj}}, echo=FALSE}
+Curr_mod_RPT$namelist_pred %>% 
+  knitr::kable(caption = str_glue("学生潜力评定名单-{Curr_subj}"))
+```

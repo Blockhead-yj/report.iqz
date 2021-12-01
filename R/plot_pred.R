@@ -21,6 +21,7 @@ plot_pred <- function(model_report){
   XYmax = max(detail_pred[c('x', 'y')], na.rm = TRUE)
   # show the number of people in each judgment level on legend
   RPT_judgment_lvls <- judgment_lvls[-9] %>% as_tibble_col(column_name = 'judgment')
+  browser()
   legend_label <- detail_pred %>%
     group_by(across(all_of('judgment'))) %>%
     summarise(n = n()) %>%
@@ -50,10 +51,12 @@ plot_pred <- function(model_report){
       annotate("text",x = XYmin , y = XYmax , label = str_c("italic(R) ^ 2 == ",round(model_report$adj_r2,2)),parse = TRUE)+
       theme(text = element_text(family = "SimHei"))
   } else {
-    p <- ggplot(detail_pred) +
+    p <- detail_pred |>
+      left_join(RPT_judgment_lvls, by = 'judgment') |>
+      ggplot() +
       geom_point(aes(x, y, color = judgment)) +
       geom_abline(aes(intercept = 0, slope = 1), color = "green") +
-      scale_color_brewer(name = "潜力评价", label = legend_label$labels, palette = "Spectral")+
+      scale_color_manual(name = "潜力评价", label = legend_label$labels, values = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666'))+
       scale_x_continuous(limits = c(XYmin - 0.1*(XYmax - XYmin), XYmax + 0.1*(XYmax - XYmin))) +
       scale_y_continuous(limits = c(XYmin - 0.1*(XYmax - XYmin), XYmax + 0.1*(XYmax - XYmin))) +
       xlab("学业学习力分数") +

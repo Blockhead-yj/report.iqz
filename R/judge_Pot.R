@@ -24,7 +24,7 @@ judge_Pot <- function(Curr_acd, predict_acd, pot_lvl1 = 15, pot_lvl2 = 10, abs_l
     potential <= -pot_lvl2 & Curr_acd >= 100                                                  ~ "后劲较弱",
     potential <= -pot_lvl1 & Curr_acd >= (100 + abs_lvl2)                                     ~ "后劲不足",
     potential <= pot_lvl2 & predict_acd >= (100 + abs_lvl1)                                   ~ "总体优秀",
-    potential <= pot_lvl2 & predict_acd >= 100 & predict_acd < (100 + abs_lvl1)  ~ "总体中等",
+    potential <= pot_lvl2 & predict_acd >= 100 & predict_acd < (100 + abs_lvl1)               ~ "总体中等",
     predict_acd > 80 & predict_acd < 100                                                      ~ "有待改进",
     predict_acd <= 80                                                                         ~ "亟待提升",
     TRUE                                                                                      ~ "未定义"

@@ -55,7 +55,7 @@ plot_pred <- function(model_report){
       ggplot() +
       geom_point(aes(x, y, color = judgment)) +
       geom_abline(aes(intercept = 0, slope = 1), color = "green") +
-      scale_color_manual(name = "潜力评价", label = legend_label$labels, palette = "Spectral")+
+      scale_color_brewer(name = "潜力评价", label = legend_label$labels, palette = "Spectral")+
       scale_x_continuous(limits = c(XYmin - 0.1*(XYmax - XYmin), XYmax + 0.1*(XYmax - XYmin))) +
       scale_y_continuous(limits = c(XYmin - 0.1*(XYmax - XYmin), XYmax + 0.1*(XYmax - XYmin))) +
       xlab("学业学习力分数") +

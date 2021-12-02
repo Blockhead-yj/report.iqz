@@ -21,7 +21,6 @@ plot_pred <- function(model_report){
   XYmax = max(detail_pred[c('x', 'y')], na.rm = TRUE)
   # show the number of people in each judgment level on legend
   RPT_judgment_lvls <- judgment_lvls[-9] %>% as_tibble_col(column_name = 'judgment')
-  browser()
   legend_label <- detail_pred %>%
     group_by(across(all_of('judgment'))) %>%
     summarise(n = n()) %>%

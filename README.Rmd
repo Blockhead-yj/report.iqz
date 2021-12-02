@@ -136,14 +136,16 @@ data_wider <- game_pfm_with_acd %>%
   select(user_id, user_name, game_name, game_score_raw, subject_name, acd_score) %>% 
   mutate(game_name = str_remove_all(game_name, "[（）-]")) %>% 
   pivot_wider(names_from = "game_name", values_from = "game_score_raw", values_fn = median) %>% 
-  mutate(across(where(is.numeric), ~ scale(.x)[,1]*15 + 100))
+  group_by(subject_name) |> 
+  mutate(across(where(is.numeric), ~ scale(.x)[,1]*15 + 100)) |> 
+  rename(Z_acd_score = acd_score)
 # make different model for different subject
 models <- data_wider %>% 
   group_by(subject_name) %>% 
   group_nest() %>% 
   mutate(step_mods = map(
     data,
-    ~ step_lm(data_wider = .x, formula = acd_score ~ . -user_id - user_name, trace = FALSE)
+    ~ step_lm(data_wider = .x, formula = Z_acd_score ~ . -user_id - user_name, trace = FALSE)
   ))
 # example model
 summary(models$step_mods[[2]])
@@ -200,7 +202,7 @@ models <- models %>%
     data = map2(
       data, RW_mods,
       ~ wt_sum_predict(data_wider = .x, model = .y) %>% 
-        mutate(judgment = judge_Pot(acd_score, wt_sum_predict))
+        mutate(judgment = judge_Pot(Z_acd_score, wt_sum_predict))
     )
   )
   
@@ -219,6 +221,7 @@ class_NL <- academic %>%
   select(user_name = 姓名, class = 班级)
 mod_reports <- models %>% 
   transmute(
+    subject_name = subject_name,
     mod_reports = map2(
       data, RW_mods,
       ~ prepare_report(data_wider = .x, model = .y, abilities = content_ability, class_NL = class_NL, background = FALSE)
@@ -228,4 +231,15 @@ mod_reports <- models %>%
 
 #### Render the predict report
 
-
+```{r render-prediction-results, results='asis'}
+prepare_template()
+tmpl_file <- file("./archetypes/report.predict.tmpl.Rmd")
+for (i in seq_along(mod_reports$subject_name)) { 
+  Curr_subj <- mod_reports$subject_name[[i]]
+  Curr_mod_RPT <- mod_reports$mod_reports[[i]]
+  knitr::knit_expand(tmpl_file) %>%
+    knitr::knit(text = ., quiet = TRUE) %>%
+    cat()
+  cat("\n\n")
+}
+```

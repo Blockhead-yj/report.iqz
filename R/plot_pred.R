@@ -50,7 +50,9 @@ plot_pred <- function(model_report){
       annotate("text",x = XYmin , y = XYmax , label = str_c("italic(R) ^ 2 == ",round(model_report$adj_r2,2)),parse = TRUE)+
       theme(text = element_text(family = "SimHei"))
   } else {
-    p <- ggplot(detail_pred) +
+    p <- detail_pred |>
+      right_join(RPT_judgment_lvls, by = 'judgment') |>
+      ggplot() +
       geom_point(aes(x, y, color = judgment)) +
       geom_abline(aes(intercept = 0, slope = 1), color = "green") +
       scale_color_brewer(name = "潜力评价", label = legend_label$labels, palette = "Spectral")+

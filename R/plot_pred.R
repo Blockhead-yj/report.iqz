@@ -20,14 +20,15 @@ plot_pred <- function(model_report){
   XYmin = min(detail_pred[c('x', 'y')], na.rm = TRUE)
   XYmax = max(detail_pred[c('x', 'y')], na.rm = TRUE)
   # show the number of people in each judgment level on legend
-  RPT_judgment_lvls <- judgment_lvls[-9] %>% as_tibble_col(column_name = 'judgment')
+  RPT_judgment_lvls <- judgment_lvls[-9] %>% as_tibble_col(column_name = 'judgment') |> mutate(judgment = factor(judgment, levels = judgment_lvls))
   legend_label <- detail_pred %>%
     group_by(across(all_of('judgment'))) %>%
-    summarise(n = n()) %>%
+    summarise(n = n(), .groups="drop") %>%
     right_join(RPT_judgment_lvls, by = 'judgment') %>%
     mutate_if(is.numeric, ~replace_na(., 0)) %>%
     mutate(n = str_pad(n,width = ceiling(log10(max(n))), side = "left") %>%
                str_c("人")) %>%
+    arrange(judgment) |>
     unite("labels",c(judgment, n), sep = ":")
   # plot the prediction and judgment
   if(is.data.frame(model_report$background)){

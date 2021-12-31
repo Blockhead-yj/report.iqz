@@ -22,7 +22,7 @@ judgment_description <- dplyr::tribble(
 )
 
 # possible subject names
-subjects <- c("语文", "数学", "英语", "外语", "科学", "物理", "化学", "生物", "社会", "道德与法治", "政治", "历史", "地理", "总分")
+subjects <- c("语文", "数学", "英语", "外语", "科学", "物理", "化学", "生物", "社会", "道德与法治", "道法", "政治", "历史", "地理", "总分")
 
 # regular exepression of questionairs
 questionairs <- "问卷|症状|量表|满意度|(?<!数)感|测查|社会|人格|职业"

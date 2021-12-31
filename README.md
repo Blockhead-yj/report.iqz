@@ -379,6 +379,9 @@ mod_reports <- models %>%
 #### Render the predict report
 
 ``` r
+prepare_template()
+#> ✓ Setting active project to '/mnt/d/cognitive training/iquizoo/report.iqz'
+#> ✓ Leaving 'archetypes/report.predict.tmpl.Rmd' unchanged
 tmpl_file <- file("./archetypes/report.predict.tmpl.Rmd")
 for (i in seq_along(mod_reports$subject_name)) { 
   Curr_subj <- mod_reports$subject_name[[i]]
@@ -423,6 +426,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 1 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-总分-1.png" width="100%" />
@@ -498,6 +502,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 1 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-数学-1.png" width="100%" />
@@ -573,6 +578,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 1 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-社会-1.png" width="100%" />
@@ -648,6 +654,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 1 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-科学-1.png" width="100%" />
@@ -723,6 +730,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 4 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-英语-1.png" width="100%" />
@@ -795,6 +803,7 @@ adj_R2 = Curr_mod_RPT$adj_r2 %>% scales::percent(0.1)
 
 ``` r
 plot_pred(Curr_mod_RPT)
+#> Warning: Removed 2 rows containing missing values (geom_point).
 ```
 
 <img src="man/figures/README-plot-predict-语文-1.png" width="100%" />

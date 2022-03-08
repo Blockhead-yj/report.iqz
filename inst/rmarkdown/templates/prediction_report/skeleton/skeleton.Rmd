@@ -1,0 +1,183 @@
+---
+params:
+  title: "XXXX学校潜力评估报告"
+title: "`r params$title`"
+date: "`r format(Sys.time(), '%Y年%m月%e日')`"
+toc-title: "目录"
+output:
+  officedown::rdocx_document:
+    reference_docx: reference/styles.docx
+    toc: yes
+    number_sections: yes
+    fig_caption: yes
+    tables:
+      caption:
+        pre: "表"
+    plots:
+      caption:
+        pre: "图"
+  html_document:
+    df_print: paged
+    code_folding: hide
+  html_notebook:
+    code_folding: hide
+---
+
+
+```{r set-up, include=FALSE}
+xfun::pkg_attach(
+  c("tidyverse", "report.iqz"),
+  message = FALSE
+)
+
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+options(knitr.kable.NA = '')
+```
+
+
+```{r load-data, include=FALSE}
+# In this chunk, you should load all data, including game data, academic score data, users data, ability config.
+
+# load your game scores data here
+scores <- report.iqz::scores
+
+# load the information of users here
+
+users <- report.iqz::users
+
+# load your academic scores data here
+acd_score <- report.iqz::academic
+
+# load the config of ability, sometimes it need to be updated, you can get it with tarflow.iquizoo
+content_ability <- report.iqz::content_ability
+```
+
+```{r tidy-data, include=FALSE}
+# In this chunk, you should wrangle the data, for example, standardized the academic score if needed.
+# You should check if the data is bad, and handle the outliers here!
+# Keep the best pipeline making the data clean.
+
+# standardize the academic score and melt it
+tidy_acd <- academic |> 
+  pivot_longer(cols = any_of(report.iqz::subjects), 
+               names_to = "subject_name", 
+               values_to = "acd_score") |> 
+  group_by(subject_name) |> 
+  mutate(Z_acd_score = scale(acd_score)[,1]*15 + 100) |> 
+  ungroup()
+
+```
+
+
+
+
+# 学科潜力预测
+
+**学业学习力分数**
+
+**定义**：与不同学科学习成绩密切相关的大脑认知能力的加权组合分数；不同学科，不同年级和不同地区，所需要的学习能力和权重各不相同。
+
+**缺失值处理**：异常的能力成绩（<50）不纳入计算，成绩大于130 按照130计算。缺失能力数量超过所需能力的30%， 不予计算学业学习力分数
+
+**总分分布**（50-150，平均分100，标准差15）
+
+**学业成绩标准分**
+
+**定义**：把每个学校或者地区的考试分数转成标准分数，平均分100，标准差15；
+
+**学业潜能分数**
+
+**定义**：学业学习力和学业成绩的加权分数，根据标准分来处理；
+
+
+
+
+```{r prepare-data-for-modeling, include=FALSE}
+# combine the game score data and the academic score data
+game_pfm_with_acd <- scores |> 
+  left_join(users, by = "user_id") |>  
+  inner_join(tidy_acd, by = c("user_name"="姓名")) 
+
+# prepare wide data for modeling
+data_wider <- game_pfm_with_acd |>  
+  select(user_id, user_name, game_name, game_score_std, subject_name, Z_acd_score) |> 
+  group_by(subject_name, game_name) |> 
+  mutate(game_name = str_remove_all(game_name, "[（）-]")) |> 
+  ungroup() |> 
+  pivot_wider(names_from = "game_name", values_from = "game_score_std", values_fn = median)
+
+```
+
+```{r prediction-model, include=FALSE}
+# make different model for different subject
+models <- data_wider |> 
+  group_by(subject_name) |> 
+  group_nest() |> 
+  mutate(step_mods = map(
+    data,
+    ~ step_lm(data_wider = .x, formula = Z_acd_score ~ . -user_id - user_name, trace = FALSE)
+  ))
+
+```
+
+```{r select-model-by-rw, include=FALSE}
+models <- models |> 
+  mutate(
+    RW_mods = map2(
+      data, step_mods,
+      ~ {select_by_RW(data_wider = .x, formula = .y, n_tasks = 5)}
+    )
+  )
+```
+
+```{r prepare-reports, include=FALSE}
+
+# prepare game ability config for function [RPT_model_tasks]
+content_ability <- content_ability |>  
+  right_join(scores |>  
+               distinct(game_name, game_id) |> 
+               mutate(game_name = str_remove_all(game_name, "[（）-]")), 
+             by = "game_id")
+# prepare class_NL for function [RPT_namelist_pred] and [RPT_namelist_drop]
+class_NL <- acd_score |> 
+  select(user_name = 姓名, class = 班级)
+
+model_reports <- models |> 
+  transmute(
+    subject = subject_name,
+    RW_mods = RW_mods,
+    mod_reports = map2(
+      data, RW_mods,
+      ~ {.x |> 
+          mutate(
+            missing_prop=calc_missing_prop(data_wider = .x, RelativeWeight = .y$rw, digits = 0.2),
+            wt_sum_predict = wt_sum_predict(data_wider = .x, model = .y),
+            judgment = judge_potential(Z_acd_score, wt_sum_predict)
+          ) 
+          
+      }
+      )
+  )
+
+```
+
+```{r render-prediction-reports, results='asis', warning=FALSE}
+# create template by usethis, a complete template and a simplified template
+tmpl_file <- prepare_template()
+
+# change the type of subject column to factor, to make the subjects in order
+model_reports <- model_reports |> 
+  mutate(subject = factor(subject, levels = subjects)) |> 
+  arrange(subject)
+# rendering
+for (i in seq_along(model_reports$subject)) { 
+  Curr_subj <- model_reports$subject[[i]]
+  Curr_mod <- model_reports$RW_mods[[i]]
+  Curr_mod_RPT <- model_reports$mod_reports[[i]]
+  knitr::knit_expand(tmpl_file) %>%
+    knitr::knit(text = ., quiet = TRUE) |> 
+    cat()
+  cat("\n\n")
+}
+```
+

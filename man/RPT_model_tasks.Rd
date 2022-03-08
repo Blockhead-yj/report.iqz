@@ -13,7 +13,7 @@ RPT_model_tasks(model, abilities)
 ability of it(ab_name_second). And a alternative column, ab_type.}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} can be used to report directly
+A \link[tibble:tibble-package]{tibble}/table can be used to report directly
 }
 \description{
 This function summary the result of linear model and relative

@@ -2,21 +2,16 @@
 % Please edit documentation in R/plot_distribution.R
 \name{plot_distribution}
 \alias{plot_distribution}
-\title{Plot the distribution by group}
+\title{Quik Histogram Plot}
 \usage{
-plot_distribution(
-  data,
-  ob_value = "game_score_raw",
-  group = ~game_name,
-  bins = 50
-)
+plot_distribution(data, x = game_score_raw, group = NULL, bins = 50)
 }
 \arguments{
-\item{data}{Data.frame, contains group column and observation value column}
+\item{data}{Data.frame, the data}
 
-\item{ob_value}{String, colname of the observed value, default "game_score_raw"}
+\item{x}{Unquoted expression, colname of the observation value, default game_score_raw}
 
-\item{group}{Formula, indicate the facet variables, default ~ game_name}
+\item{group}{Formula, indicate the facet variables}
 
 \item{bins}{Numerical, how much bins are used in geom_histogram, default 50}
 }
@@ -24,7 +19,7 @@ plot_distribution(
 a ggplot object
 }
 \description{
-Check the distribution of game scores or academic scores is often
-needed, this function is used to do this. It plot the distribution by groups
-(game_name or subject_name).
+This function is a wrapper of \code{\link[ggplot2:geom_histogram]{ggplot2::geom_histogram()}}, usually used to
+check the distribution of game scores or academic scores. If group is assigned, it will
+plot the distribution by groups (usually game_name or subject_name).
 }

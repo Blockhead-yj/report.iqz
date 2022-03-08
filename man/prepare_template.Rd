@@ -4,10 +4,10 @@
 \alias{prepare_template}
 \title{prepare the prediction template}
 \usage{
-prepare_template()
+prepare_template(template_name = "Sreport.predict.tmpl")
 }
 \arguments{
-\item{None}{}
+\item{template_name}{the name of template you want to use}
 }
 \value{
 None

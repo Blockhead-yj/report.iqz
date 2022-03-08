@@ -1,28 +1,28 @@
-#' @title Plot the distribution by group
+#' @title Quik Histogram Plot
 #'
-#' @description Check the distribution of game scores or academic scores is often
-#' needed, this function is used to do this. It plot the distribution by groups
-#' (game_name or subject_name).
+#' @description This function is a wrapper of [ggplot2::geom_histogram()], usually used to
+#' check the distribution of game scores or academic scores. If group is assigned, it will
+#' plot the distribution by groups (usually game_name or subject_name).
 #'
-#' @param data Data.frame, contains group column and observation value column
-#' @param ob_value String, colname of the observed value, default "game_score_raw"
-#' @param group Formula, indicate the facet variables, default ~ game_name
+#' @param data Data.frame, the data
+#' @param x Unquoted expression, colname of the observation value, default game_score_raw
+#' @param group Formula, indicate the facet variables
 #' @param bins Numerical, how much bins are used in geom_histogram, default 50
 #'
 #' @return a ggplot object
 #'
 #' @export
 
-plot_distribution <- function(data, ob_value = "game_score_raw", group = ~ game_name, bins = 50){
-  stopifnot("multiple observation value column is not supported!" = length(ob_value)==1)
-  p <- data %>%
-    rename(ob_value = all_of(ob_value)) %>%
-    filter(!is.na(ob_value)) %>%
-    ggplot(aes(ob_value)) +
-    geom_histogram(bins = bins) +
-    facet_wrap(group, scales = "free") +
-    theme_minimal() +
-    xlab(ob_value)
+plot_distribution <- function(data, x = game_score_raw, group = NULL, bins = 50){
+  x <- rlang::enquo(x)
+
+  p <- data |>
+    ggplot2::ggplot(aes(!!x)) +
+    ggplot2::geom_histogram(bins = bins) +
+    ggplot2::theme_minimal()
+  if(!is.null(group)){
+    stopifnot("group must be a formula" = (class(group)=="formula"))
+    p <- p + ggplot2::facet_wrap(group, scales = "free")
+  }
   p
 }
-

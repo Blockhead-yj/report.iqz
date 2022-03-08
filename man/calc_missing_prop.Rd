@@ -4,21 +4,23 @@
 \alias{calc_missing_prop}
 \title{Calculate the missing proportion of predictors by relative weight}
 \usage{
-calc_missing_prop(data_wider, RelativeWeight)
+calc_missing_prop(data_wider, RelativeWeight, digits)
 }
 \arguments{
 \item{data_wider}{Data.frame, which each row contains all the observations of a single person.}
 
-\item{RelativeWeight}{Data.frame, generate by rwa::rwa, contains the relative weight of
+\item{RelativeWeight}{Data.frame, generate by \code{\link[rwa:rwa]{rwa::rwa()}}, contains the relative weight of
 each variable}
+
+\item{digits, }{Numerical, the digits missing_prop reserved}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} with the missing proportion of predictors add on the right
+A vector with length nrow(data_wider), indicate the missing proportion of predictors
 }
 \description{
 There is a situation that we want to make prediction for
 incomplete observation, which a linear model don't support. However, we try to
-approximitly predict those imcomplete observation with small missing part.
+approximately predict those incomplete observation with small missing part.
 So, this function is used to calculate the missing proportion of predictors,
 the weight fo each predictor is from relative weight analysis.
 }

@@ -7,14 +7,18 @@
 #'
 #' @param data_wider Data.frame, which each row contains all the observations of a single person
 #' @param formula Formula, indicate which variables should be included in model
+#' @param n_tasks, Numerical, the least number of tasks that a step method should be used
 #' @param ... Other arguments used in stats::step function
 #'
 #' @return A lm object
 #'
 #' @export
 
-step_lm <- function(data_wider, formula, trace = FALSE, ...){
-  complete_data <- drop_na(data_wider)
+step_lm <- function(data_wider, formula, n_tasks=5, trace = FALSE, ...){
+  complete_data <- tidyr::drop_na(data_wider)
   tmp_model <- lm(formula, data = complete_data)
-  step(tmp_model, trace = trace, ...)
-  }
+  if(length(tmp_model$terms |> attr("term.labels")) >= n_tasks)
+    tmp_model <- step(tmp_model, trace = trace, ...)
+
+  tmp_model
+}

@@ -1,0 +1,4 @@
+name: prediction_report
+description: >
+   A template used for creating academic potential report.
+create_dir: FALSE

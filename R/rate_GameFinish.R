@@ -10,9 +10,9 @@
 #' @param data Data.frame, contains the essential data(index of game, index of user,
 #' observed value).
 #' @param plot Logical value indicate if plot the finish rate or not, default `FALSE`
-#' @param idx_game String, colname of the unique index of game, default "game_name"
-#' @param idx_user String, colname of the unique index of user, default "user_id"
-#' @param ob_value String, colname of the observed value, default "game_score_raw"
+#' @param idx_game Unquoted expression, colname of the unique index of game, default game_name
+#' @param idx_user Unquoted expression, colname of the unique index of user, default user_id
+#' @param ob_value Unquoted expression, colname of the observed value, default game_score_raw
 #'
 #' @return A [tibble][tibble::tibble-package] contains following values:
 #'   \item{idx_game}{index of game, will be the same as input.}
@@ -21,37 +21,56 @@
 #' @export
 
 
-rate_GameFinish <- function(data, plot = FALSE, idx_game = "game_name", idx_user = "user_id", ob_value = "game_score_raw"){
-  stopifnot(exprObject = length(idx_game)==1&&length(idx_user)==1&&length(ob_value)==1)
-  minimal_data <- data %>%
-    ungroup() %>%
-    select(idx_game = all_of(idx_game),
-           idx_user = all_of(idx_user),
-           ob_value = all_of(ob_value)) %>%
-    mutate(ob_value = !is.na(ob_value)) %>%
-    unique() %>%
-    complete(idx_game, idx_user, fill = list(ob_value = FALSE))
-  out <- minimal_data %>%
-    group_by(idx_game) %>%
-    summarise(finish_rate = mean(ob_value), .groups = "drop")
+rate_GameFinish <- function(data,
+                            idx_game = game_name,
+                            idx_user = user_id,
+                            ob_value = game_score_raw,
+                            plot = FALSE){
+
+  idx_game <- rlang::enquo(idx_game)
+  idx_user <- rlang::enquo(idx_user)
+  ob_value <- rlang::enquo(ob_value)
+
+  minimal_data <- data |>
+    dplyr::ungroup() |>
+    dplyr::select(!!idx_game, !!idx_user, !!ob_value) |>
+    dplyr::mutate(ob_value = !is.na(!!ob_value), .keep="unused") |>
+    unique() |>
+    tidyr::complete(!!idx_game, !!idx_user, fill = list(ob_value = FALSE))
+
+  n_users <- minimal_data |>
+    dplyr::distinct(!!idx_user) |>
+    nrow()
+
+  out <- minimal_data |>
+    dplyr::group_by(!!idx_game) |>
+    dplyr::summarise(
+      finish_rate = mean(ob_value),
+      .groups = "drop"
+      )
   if(plot) {
-    p <-  ggplot() +
-      geom_raster(data = minimal_data, aes(
-        reorder(idx_game, ob_value, sum),
-        reorder(idx_user, ob_value, sum),
-        fill = ob_value),
+    p <-  ggplot2::ggplot() +
+      ggplot2::geom_raster(
+        data = minimal_data,
+        ggplot2::aes(reorder(!!idx_game, ob_value, sum),
+                     reorder(!!idx_user, ob_value, sum),
+                     fill = ob_value),
         alpha = 0.8) +
-      scale_fill_manual(name = "",
-                        values = c("tomato3", "steelblue"),
-                        labels = c("Missing", "Present")) +
-      labs(x = "Game Name", y = "user", title = "Missing values") +
-      theme_minimal() +
-      scale_y_discrete(breaks = NULL) +
-      geom_text(data = out, aes(idx_game, n_distinct(minimal_data$idx_user)*0.1, label = format(finish_rate, digits = 3))) +
-      coord_flip()
+      ggplot2::scale_fill_manual(
+        name = "",
+        values = c("tomato3", "steelblue"),
+        labels = c("Missing", "Present")) +
+      ggplot2::labs(x = "Game Name",
+                    y = "user",
+                    title = "Missing values") +
+      ggplot2::theme_minimal() +
+      ggplot2::scale_y_discrete(breaks = NULL) +
+      ggplot2::geom_text(
+        data = out,
+        ggplot2::aes(!!idx_game, n_users*0.1,
+                     label = format(finish_rate, digits = 3))) +
+      ggplot2::coord_flip()
     plot(p)
-    }
-  out
   }
-
-
+  out
+}

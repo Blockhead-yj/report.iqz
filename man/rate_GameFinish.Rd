@@ -6,23 +6,23 @@
 \usage{
 rate_GameFinish(
   data,
-  plot = FALSE,
-  idx_game = "game_name",
-  idx_user = "user_id",
-  ob_value = "game_score_raw"
+  idx_game = game_name,
+  idx_user = user_id,
+  ob_value = game_score_raw,
+  plot = FALSE
 )
 }
 \arguments{
 \item{data}{Data.frame, contains the essential data(index of game, index of user,
 observed value).}
 
+\item{idx_game}{Unquoted expression, colname of the unique index of game, default game_name}
+
+\item{idx_user}{Unquoted expression, colname of the unique index of user, default user_id}
+
+\item{ob_value}{Unquoted expression, colname of the observed value, default game_score_raw}
+
 \item{plot}{Logical value indicate if plot the finish rate or not, default \code{FALSE}}
-
-\item{idx_game}{String, colname of the unique index of game, default "game_name"}
-
-\item{idx_user}{String, colname of the unique index of user, default "user_id"}
-
-\item{ob_value}{String, colname of the observed value, default "game_score_raw"}
 }
 \value{
 A \link[tibble:tibble-package]{tibble} contains following values:

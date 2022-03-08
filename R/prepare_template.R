@@ -2,14 +2,16 @@
 #'
 #' @description copy the prediction template into current work directory
 #'
-#' @param None
+#' @param template_name the name of template you want to use
 #'
 #' @return None
 #'
 #' @export
 #'
 
-prepare_template <- function(){
-  usethis::use_directory("archetypes")
-  usethis::use_template("report.predict.tmpl.Rmd", save_as = "archetypes/report.predict.tmpl.Rmd", package = "report.iqz")
+prepare_template <- function(template_name = "Sreport.predict.tmpl"){
+  if (file.exists(glue::glue("./archetypes/{template_name}"))) {
+    file.rename(glue::glue("./archetypes/{template_name}"), glue::glue("./archetypes/{template_name}.Rmd"))
+  }
+  file(glue::glue("./archetypes/{template_name}.Rmd"))
 }

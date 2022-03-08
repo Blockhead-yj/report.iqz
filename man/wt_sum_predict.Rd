@@ -12,7 +12,7 @@ wt_sum_predict(data_wider, model)
 \item{model}{A lm object, the fitted linear model.}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} with the prediction values add on the right
+A vector with length nrow(data_wider), indicate the weighted sum prediction
 }
 \description{
 This is a attempt to make prediction to observation with missing

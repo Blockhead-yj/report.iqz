@@ -4,12 +4,14 @@
 \alias{step_lm}
 \title{Select predictor games by step regression}
 \usage{
-step_lm(data_wider, formula, trace = FALSE, ...)
+step_lm(data_wider, formula, n_tasks = 5, trace = FALSE, ...)
 }
 \arguments{
 \item{data_wider}{Data.frame, which each row contains all the observations of a single person}
 
 \item{formula}{Formula, indicate which variables should be included in model}
+
+\item{n_tasks, }{Numerical, the least number of tasks that a step method should be used}
 
 \item{...}{Other arguments used in stats::step function}
 }

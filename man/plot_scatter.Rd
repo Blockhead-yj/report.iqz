@@ -2,20 +2,20 @@
 % Please edit documentation in R/plot_scatter.R
 \name{plot_scatter}
 \alias{plot_scatter}
-\title{plot the scatter plot of game score and academic score by group}
+\title{Quick Scatter Plot}
 \usage{
 plot_scatter(
   data,
-  ob_value_x = "game_score_raw",
-  ob_value_y = "acd_score",
-  group,
+  x = game_score_raw,
+  y = acd_score,
+  group = NULL,
   cor = FALSE
 )
 }
 \arguments{
-\item{data}{Data.frame, contains two observation value column and groups column}
+\item{data}{Data.frame, the data}
 
-\item{ob_value_x, ob_value_y}{String, colname of the observation value}
+\item{x, y}{Unquoted expression, colname of the observation value}
 
 \item{group}{Formula, indicate the facet variables}
 
@@ -25,6 +25,7 @@ plot_scatter(
 a ggplot object
 }
 \description{
-This function is used to check the scatter distribution of
-game scores and academic scores, correlation will be calculate if specified
+This function is a wrapper of \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}}, usually
+used to check the scatter distribution of game scores and academic scores,
+correlation will be calculate if specified
 }
